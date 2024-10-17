@@ -13,6 +13,14 @@ const userSchema = new Schema({
         type: String,
         required: true,
     },
+    profileImage: {
+        type: String,
+        default: "",
+      },
+      chats: {
+        type: [{ type: mongoose.Schema.Types.ObjectId, ref: "chat" }],
+        default: [],
+      },
     
 },
 {timestamps: true},
