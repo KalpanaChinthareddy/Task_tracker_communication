@@ -11,22 +11,25 @@ const MyCalendar = () => {
     const [date, setDate] = useState(new Date());
     const [events, setEvents] = useState([]); // Events state
     const [isModalOpen, setModalOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentEventIndex, setCurrentEventIndex] = useState(null);
     const [eventTitle, setEventTitle] = useState('');
     const [eventTime, setEventTime] = useState('');
+    const [eventTags, setEventTags] = useState('');
     const [selectedDate, setSelectedDate] = useState(null);
-    const [currentEventIndex, setCurrentEventIndex] = useState(null); // To track which event is being edited
 
     useEffect(() => {
         const checkForReminders = () => {
             const now = new Date();
-            setEvents(prevEvents =>
+            setEvents((prevEvents) => 
                 prevEvents.map(event => {
                     const eventDateTime = new Date(`${event.date} ${event.time}`);
                     if (!event.reminded && eventDateTime <= now) {
+                        // Trigger a notification when the event time is reached
                         toast.info(`Reminder: ${event.title} at ${event.time}`);
                         return { ...event, reminded: true }; // Mark event as reminded
                     }
-                    return event; // Return the original event if not due
+                    return event;
                 })
             );
         };
@@ -37,10 +40,8 @@ const MyCalendar = () => {
 
     const handleDateClick = (value) => {
         setSelectedDate(value);
+        setIsEditing(false); // Reset editing state
         setModalOpen(true);
-        setCurrentEventIndex(null); // Reset the event index when opening the modal
-        setEventTitle(''); // Reset the title
-        setEventTime(''); // Reset the time
     };
 
     const handleEventAdd = () => {
@@ -49,24 +50,27 @@ const MyCalendar = () => {
                 date: selectedDate.toDateString(),
                 time: eventTime,
                 title: eventTitle,
+                tags: eventTags.split(',').map(tag => tag.trim()), // Split tags by comma and trim spaces
                 reminded: false, // Track if the reminder was shown
             };
 
-            if (currentEventIndex !== null) {
+            if (isEditing) {
                 // Update existing event
-                setEvents(prevEvents => {
+                setEvents((prevEvents) => {
                     const updatedEvents = [...prevEvents];
-                    updatedEvents[currentEventIndex] = newEvent; // Replace the edited event
+                    updatedEvents[currentEventIndex] = newEvent; // Replace the event
                     return updatedEvents;
                 });
+                toast.success('Event updated successfully!');
             } else {
                 // Add new event
-                setEvents(prevEvents => [...prevEvents, newEvent]);
+                setEvents((prevEvents) => [...prevEvents, newEvent]);
+                toast.success('Event added successfully!');
             }
 
-            setModalOpen(false);
+            handleModalClose();
         } else {
-            toast.error('Please enter both event title and time.'); // Error message
+            toast.error('Please enter event title, time, and tags.'); // Error message
         }
     };
 
@@ -74,21 +78,28 @@ const MyCalendar = () => {
         const eventToEdit = events[index];
         setEventTitle(eventToEdit.title);
         setEventTime(eventToEdit.time);
+        setEventTags(eventToEdit.tags.join(', ')); // Join tags into a string
         setCurrentEventIndex(index);
-        setSelectedDate(new Date(eventToEdit.date));
+        setIsEditing(true);
         setModalOpen(true);
     };
 
     const handleDeleteEvent = (index) => {
-        setEvents(prevEvents => prevEvents.filter((_, i) => i !== index));
-        toast.success('Event deleted successfully!'); // Success message
+        setEvents((prevEvents) => prevEvents.filter((_, i) => i !== index));
+        toast.success('Event deleted successfully!');
     };
 
     const handleCancel = () => {
+        handleModalClose();
+    };
+
+    const handleModalClose = () => {
         setModalOpen(false);
         setEventTitle('');
         setEventTime('');
-        setCurrentEventIndex(null); // Reset the index
+        setEventTags('');
+        setCurrentEventIndex(null);
+        setIsEditing(false);
     };
 
     return (
@@ -100,7 +111,7 @@ const MyCalendar = () => {
                     value={date}
                     onClickDay={handleDateClick}
                     tileClassName={({ date, view }) =>
-                        events.find(event => format(new Date(event.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
+                        events.find((event) => format(new Date(event.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
                             ? 'highlight'
                             : ''
                     }
@@ -113,17 +124,26 @@ const MyCalendar = () => {
                 <div className="mt-4">
                     <h2 className="text-xl font-bold">Events</h2>
                     {events
-                        .filter(event => event.date === date.toDateString())
+                        .filter((event) => event.date === date.toDateString())
                         .map((event, index) => (
                             <div key={index} className="bg-gray-200 p-2 rounded mt-2 flex justify-between items-center">
                                 <div>
-                                    <strong>{event.time} - </strong> {event.title}
+                                    <strong>{event.time} - </strong> {event.title} 
+                                    {event.tags.length > 0 && (
+                                        <span className="ml-2 text-sm text-gray-600">[{event.tags.join(', ')}]</span>
+                                    )}
                                 </div>
                                 <div>
-                                    <button onClick={() => handleEditEvent(index)} className="bg-yellow-500 text-white px-2 py-1 rounded mr-2">
+                                    <button
+                                        onClick={() => handleEditEvent(index)}
+                                        className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                                    >
                                         Edit
                                     </button>
-                                    <button onClick={() => handleDeleteEvent(index)} className="bg-red-500 text-white px-2 py-1 rounded">
+                                    <button
+                                        onClick={() => handleDeleteEvent(index)}
+                                        className="bg-red-500 text-white px-2 py-1 rounded"
+                                    >
                                         Delete
                                     </button>
                                 </div>
@@ -136,7 +156,7 @@ const MyCalendar = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h2 className="text-2xl font-bold mb-4">{currentEventIndex !== null ? 'Edit Event' : 'Add Event'}</h2>
+                        <h2 className="text-2xl font-bold mb-4">{isEditing ? 'Edit Event' : 'Add Event'}</h2>
                         <input
                             type="text"
                             placeholder="Event Title"
@@ -150,6 +170,13 @@ const MyCalendar = () => {
                             onChange={(e) => setEventTime(e.target.value)}
                             className="border p-2 rounded w-full mb-2"
                         />
+                        <input
+                            type="text"
+                            placeholder="Tags (comma separated)"
+                            value={eventTags}
+                            onChange={(e) => setEventTags(e.target.value)}
+                            className="border p-2 rounded w-full mb-2"
+                        />
                         <div className="flex justify-end mt-4">
                             <button
                                 onClick={handleCancel}
@@ -161,7 +188,7 @@ const MyCalendar = () => {
                                 onClick={handleEventAdd}
                                 className="bg-blue-500 text-white px-4 py-2 rounded"
                             >
-                                {currentEventIndex !== null ? 'Update Event' : 'Add Event'}
+                                {isEditing ? 'Update Event' : 'Add Event'}
                             </button>
                         </div>
                     </div>
