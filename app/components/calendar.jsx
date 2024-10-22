@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css'; // Calendar CSS
-import { ToastContainer, toast } from 'react-toastify'; // Import toast and ToastContainer for notifications
-import 'react-toastify/dist/ReactToastify.css'; // Toast CSS
-import { format } from 'date-fns'; // For date formatting
+import 'react-calendar/dist/Calendar.css';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { format } from 'date-fns';
 
 const MyCalendar = () => {
     const [date, setDate] = useState(new Date());
-    const [events, setEvents] = useState([]); // Events state
+    const [events, setEvents] = useState([]);
     const [isModalOpen, setModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentEventIndex, setCurrentEventIndex] = useState(null);
@@ -18,29 +18,32 @@ const MyCalendar = () => {
     const [eventTags, setEventTags] = useState('');
     const [selectedDate, setSelectedDate] = useState(null);
 
+    // Check for reminders every 60 seconds
     useEffect(() => {
         const checkForReminders = () => {
             const now = new Date();
-            setEvents((prevEvents) => 
-                prevEvents.map(event => {
+
+            setEvents((prevEvents) =>
+                prevEvents.map((event) => {
                     const eventDateTime = new Date(`${event.date} ${event.time}`);
+
                     if (!event.reminded && eventDateTime <= now) {
-                        // Trigger a notification when the event time is reached
+                        // Send a reminder and mark the event as reminded
                         toast.info(`Reminder: ${event.title} at ${event.time}`);
-                        return { ...event, reminded: true }; // Mark event as reminded
+                        return { ...event, reminded: true };
                     }
                     return event;
                 })
             );
         };
 
-        const interval = setInterval(checkForReminders, 60000); // Check every minute
+        const interval = setInterval(checkForReminders, 1000 * 60); // Check every 60 seconds
         return () => clearInterval(interval);
-    }, []);
+    }, [events]);
 
     const handleDateClick = (value) => {
         setSelectedDate(value);
-        setIsEditing(false); // Reset editing state
+        setIsEditing(false);
         setModalOpen(true);
     };
 
@@ -50,27 +53,25 @@ const MyCalendar = () => {
                 date: selectedDate.toDateString(),
                 time: eventTime,
                 title: eventTitle,
-                tags: eventTags.split(',').map(tag => tag.trim()), // Split tags by comma and trim spaces
-                reminded: false, // Track if the reminder was shown
+                tags: eventTags.split(',').map((tag) => tag.trim()),
+                reminded: false,
             };
 
             if (isEditing) {
-                // Update existing event
                 setEvents((prevEvents) => {
                     const updatedEvents = [...prevEvents];
-                    updatedEvents[currentEventIndex] = newEvent; // Replace the event
+                    updatedEvents[currentEventIndex] = newEvent;
                     return updatedEvents;
                 });
                 toast.success('Event updated successfully!');
             } else {
-                // Add new event
                 setEvents((prevEvents) => [...prevEvents, newEvent]);
                 toast.success('Event added successfully!');
             }
 
             handleModalClose();
         } else {
-            toast.error('Please enter event title, time, and tags.'); // Error message
+            toast.error('Please enter event title, time, and tags.');
         }
     };
 
@@ -78,7 +79,7 @@ const MyCalendar = () => {
         const eventToEdit = events[index];
         setEventTitle(eventToEdit.title);
         setEventTime(eventToEdit.time);
-        setEventTags(eventToEdit.tags.join(', ')); // Join tags into a string
+        setEventTags(eventToEdit.tags.join(', '));
         setCurrentEventIndex(index);
         setIsEditing(true);
         setModalOpen(true);
@@ -110,8 +111,10 @@ const MyCalendar = () => {
                     onChange={setDate}
                     value={date}
                     onClickDay={handleDateClick}
-                    tileClassName={({ date, view }) =>
-                        events.find((event) => format(new Date(event.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
+                    tileClassName={({ date: tileDate }) =>
+                        events.some((event) =>
+                            format(new Date(event.date), 'yyyy-MM-dd') === format(tileDate, 'yyyy-MM-dd')
+                        )
                             ? 'highlight'
                             : ''
                     }
@@ -120,17 +123,21 @@ const MyCalendar = () => {
                     Selected Date: <strong>{date.toDateString()}</strong>
                 </p>
 
-                {/* Display events for the selected date */}
+                {/* Display events grouped by date */}
                 <div className="mt-4">
                     <h2 className="text-xl font-bold">Events</h2>
-                    {events
-                        .filter((event) => event.date === date.toDateString())
-                        .map((event, index) => (
-                            <div key={index} className="bg-gray-200 p-2 rounded mt-2 flex justify-between items-center">
+                    {events.length > 0 ? (
+                        events.map((event, index) => (
+                            <div
+                                key={index}
+                                className="bg-gray-200 p-2 rounded mt-2 flex justify-between items-center"
+                            >
                                 <div>
-                                    <strong>{event.time} - </strong> {event.title} 
+                                    <strong>{event.date} - {event.time}:</strong> {event.title}
                                     {event.tags.length > 0 && (
-                                        <span className="ml-2 text-sm text-gray-600">[{event.tags.join(', ')}]</span>
+                                        <span className="ml-2 text-sm text-gray-600">
+                                            [{event.tags.join(', ')}]
+                                        </span>
                                     )}
                                 </div>
                                 <div>
@@ -148,7 +155,10 @@ const MyCalendar = () => {
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                        ))
+                    ) : (
+                        <p className="text-gray-500 mt-2">No events scheduled.</p>
+                    )}
                 </div>
             </div>
 
