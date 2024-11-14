@@ -1,10 +1,11 @@
-// /app/projects/page.jsx
-import Projects  from "../components/Projects";
+import ProjectList from '../components/ProjectList';
 
-export default function Page() {
+export default function ProjectsPage() {
   return (
     <div>
-      <Projects />
+     
+      <ProjectList />
+      
     </div>
   );
 }
