@@ -1,44 +1,32 @@
 import unittest
-from app import app, db, User  # Adjust import based on your app structure
+import requests
 
-class AuthTestCase(unittest.TestCase):
-    def setUp(self):
-        app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # In-memory database for testing
-        self.app = app.test_client()
-        db.create_all()
+class AuthTests(unittest.TestCase):
+    BASE_URL = "http://localhost:3000/api"
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-
-    def test_user_registration(self):
-        response = self.app.post('/register', data={
-            'username': 'testuser',
-            'password': 'testpass',
-            'email': 'test@example.com'
+    def test_register_user(self):
+        response = requests.post(f"{self.BASE_URL}/register", json={
+            "name": "testuser",
+            "email": "testuser@gmail.com",
+            "password": "testpass"
         })
-        self.assertEqual(response.status_code, 201)  # Check for successful creation
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("message", response.json())
 
-    def test_user_login(self):
-        # First register a user
-        self.app.post('/register', data={
-            'username': 'testuser',
-            'password': 'testpass',
-            'email': 'test@example.com'
+    def test_login_user(self):
+        response = requests.post(f"{self.BASE_URL}/userExists", json={
+            "name": "testuser",
+            "email": "testuser@gmail.com",
+            "password": "testpass"
         })
-        response = self.app.post('/login', data={
-            'username': 'testuser',
-            'password': 'testpass'
-        })
-        self.assertEqual(response.status_code, 200)  # Check for successful login
+        self.assertEqual(response.status_code, 200)
+       
 
-    def test_invalid_login(self):
-        response = self.app.post('/login', data={
-            'username': 'wronguser',
-            'password': 'wrongpass'
+    def test_login_invalid_user(self):
+        response = requests.post(f"{self.BASE_URL}/userExists", json={
+            "username": "invaliduser",
+            "email": "testuer@gmail.com",
+            "password": "wrongpass"
         })
-        self.assertEqual(response.status_code, 401)  # Check for unauthorized
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertEqual(response.status_code, 401)
+       

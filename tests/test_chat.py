@@ -1,37 +1,41 @@
 import unittest
-from app import app, db, Chat  # Adjust import based on your app structure
+import requests
 
-class ChatTestCase(unittest.TestCase):
-    def setUp(self):
-        app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        self.app = app.test_client()
-        db.create_all()
+BASE_URL = "http://localhost:3000/api"  # Replace with your actual base URL
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+class ChatApiTestCase(unittest.TestCase):
 
-    def test_create_chat(self):
-        response = self.app.post('/chats', data={
-            'members': ['user1', 'user2'],  # Example user IDs
-            'isGroup': True,
-            'name': 'Test Group Chat'
-        })
-        self.assertEqual(response.status_code, 201)  # Check for successful chat creation
+    def test_get_chat_details(self):
+   
+        chat_id = "6735632be39a52f43bb37e5f"  # Replace with an actual test ID
+        response = requests.get(f"{BASE_URL}/chats/{chat_id}")
+        self.assertEqual(response.status_code, 200)
+      
+    def test_get_chat_details_invalid_id(self):
+        # Test retrieving chat details with an invalid chat ID
+        chat_id = "6735632be39a52f43bb37e5g"
+        response = requests.get(f"{BASE_URL}/chats/{chat_id}")
+        self.assertEqual(response.status_code, 500)
+    def test_search_contact(self):
+        # Test searching for a contact by query
+        user_id = "66fec32894c2799f219ba320"
+        query = "user2"
+        response = requests.get(f"{BASE_URL}/users/searchContact/${query}", params={"query": query})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
+        if response.json():
+            self.assertIn("contactId", response.json()[0])
+            self.assertIn("name", response.json()[0])
+      
+    def test_update_chat(self):
+        # Test updating a chat with a valid ID and data
+        chat_id = "6735632be39a52f43bb37e5f"
+        update_data = {
+            "title": "Updated Chat Title"
+        }
+        response = requests.post(f"{BASE_URL}/chats/{chat_id}/update", json=update_data)
+        self.assertEqual(response.status_code, 200)
+      
 
-    def test_send_message(self):
-        # First create a chat
-        self.app.post('/chats', data={
-            'members': ['user1', 'user2'],
-            'isGroup': True,
-            'name': 'Test Group Chat'
-        })
-        response = self.app.post('/chats/1/messages', data={
-            'sender': 'user1',  # Example user ID
-            'text': 'Hello!'
-        })
-        self.assertEqual(response.status_code, 201)  # Check for successful message sending
+   
 
-if __name__ == '__main__':
-    unittest.main()
