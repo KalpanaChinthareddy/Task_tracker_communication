@@ -23,8 +23,8 @@ jobs:
 
       - name: Start Backend Server
         run: |
-          nohup npm run dev &  # Assuming 'npm run dev' starts your server
-          sleep 5  # Wait for the server to fully start
+          npm run dev 
+          sleep 10  # Wait for the server to fully start
 
       - name: Run Tests
         run: python -m unittest discover -s tests
