@@ -31,8 +31,8 @@ jobs:
 
       - name: Start Backend Server
         run: |
-          npx next dev
-          sleep 10  # Wait for the server to fully start
+          npx next dev &
+          npx wait-on http://localhost:3000  # Wait for the server to fully start
 
       - name: Run Tests
         run: python -m unittest discover -s tests
