@@ -7,8 +7,12 @@ export async function POST(req){
         await connectMongoDB();
         const { email } = await req.json();
         const user = await User.findOne({email}).select("_id");
+        if (!user) {
+            // User not found, return 401
+            return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
+        }
         console.log("user:",user);
-        return NextResponse.json({user});
+        return NextResponse.json({user},{status:200});
     }catch(error){
         console.log(error);
     }
