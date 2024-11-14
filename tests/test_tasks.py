@@ -1,47 +1,52 @@
 import unittest
-from app import app, db, Task  # Adjust import based on your app structure
+import requests
+from datetime import datetime
 
-class TaskTestCase(unittest.TestCase):
+class TaskTests(unittest.TestCase):
+    BASE_URL = "http://localhost:3000/api/projects/6733928ba1ac3c534d492425"
+
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        self.app = app.test_client()
-        db.create_all()
-
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+        # Define a valid deadline
+        deadline = datetime(2024, 12, 31, 23, 59).isoformat() 
+        
+        # Create a task before each test method
+        response = requests.post(f"{self.BASE_URL}/tasks", json={
+            "projectId": "6733928ba1ac3c534d492425",  # Use an existing project ID
+            "title": "New Task",
+            "description": "Task description",
+            "assignedTo": "testuser",
+            "status": "In Progress",
+            "deadline": deadline  # Send the deadline as an ISO string
+        })
+        self.assertEqual(response.status_code, 201)
+        self.task_id = response.json().get("task", {}).get("_id")  # Store the task ID for later tests
 
     def test_create_task(self):
-        response = self.app.post('/tasks', data={
-            'title': 'Test Task',
-            'description': 'Test Description',
-            'due_date': '2024-12-31'
-        })
-        self.assertEqual(response.status_code, 201)  # Check for successful task creation
+        # Project creation and task creation is handled by setUp(), so we check if task_id is available
+        self.assertIsNotNone(self.task_id, "Task ID should be available.")
+    
+    def test_get_tasks(self):
+        response = requests.get(f"{self.BASE_URL}/tasks")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
 
     def test_update_task(self):
-        # First create a task
-        self.app.post('/tasks', data={
-            'title': 'Test Task',
-            'description': 'Test Description',
-            'due_date': '2024-12-31'
+        # Ensure the task ID is available
+        self.assertIsNotNone(self.task_id, "Task ID not available for update.")
+        
+        # Update the task using the stored task ID
+        response = requests.put(f"{self.BASE_URL}/tasks/{self.task_id}", json={
+            "title": "Updated Task",
+            "description": "Updated description",
+            "assignedTo": "testuser"
         })
-        response = self.app.put('/tasks/1', data={
-            'title': 'Updated Task',
-            'description': 'Updated Description'
-        })
-        self.assertEqual(response.status_code, 200)  # Check for successful update
+        self.assertEqual(response.status_code, 200)
+       
 
     def test_delete_task(self):
-        # First create a task
-        self.app.post('/tasks', data={
-            'title': 'Test Task',
-            'description': 'Test Description',
-            'due_date': '2024-12-31'
-        })
-        response = self.app.delete('/tasks/1')  # Assuming the ID is 1
-        self.assertEqual(response.status_code, 204)  # Check for successful deletion
-
-if __name__ == '__main__':
-    unittest.main()
+        # Ensure the task ID is available before deletion
+        self.assertIsNotNone(self.task_id, "Task ID not available for deletion.")
+        
+        response = requests.delete(f"{self.BASE_URL}/tasks/{self.task_id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("message", response.json())  
