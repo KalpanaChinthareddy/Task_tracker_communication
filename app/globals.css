@@ -13,11 +13,3 @@
 .main-container {
   @apply h-screen flex justify-between gap-5 px-10 py-3 max-lg:gap-8;
 }
-
-
-}
-
-/* BottomBar */
-.bottombar {
-  @apply bottom-0 sticky px-10 py-5 flex items-center justify-between sm:hidden;
-}
