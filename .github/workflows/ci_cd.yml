@@ -10,17 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:latest
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongo --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -37,7 +26,7 @@ jobs:
 
       - name: Run tests
         env:
-          MONGO_URI: "mongodb://localhost:27017/test_db"
+          MONGODB_URI: "mongodb+srv://kalpanachinthareddy:5K5eKEkq1hv2e6oj@cluster0.4jk8s.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
           BASE_URL: "http://localhost:3000"
         run: |
           python -m unittest discover -s tests
