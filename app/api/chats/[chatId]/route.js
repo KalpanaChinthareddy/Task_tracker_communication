@@ -1,6 +1,6 @@
 import Chat from "@/app/models/chat";
 import Message from "@/app/models/message";
-import User from "@/app/models/userser";
+import User from "@/app/models/user";
 import { connectMongoDB } from "@/app/lib/mongodb";
 
 export const GET = async (req, { params }) => {
