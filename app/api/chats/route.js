@@ -1,6 +1,6 @@
 import { pusherServer } from "@/app/lib/pusher";
 import Chat from "@/app/models/chat";
-import User from "@/app/usermodels/user";
+import User from "@/app/models/user";
 import { connectMongoDB } from "@/app/lib/mongodb";
 
 export const POST = async (req) => {
