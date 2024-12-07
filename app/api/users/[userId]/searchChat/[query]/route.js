@@ -1,4 +1,4 @@
-import Chat from "@/app/models/chathat";
+import Chat from "@/app/models/chat";
 import Message from "@/app/models/message";
 import User from "@/app/models/user";
 import { connectMongoDB } from "@/app/lib/mongodb";

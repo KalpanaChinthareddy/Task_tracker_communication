@@ -1,6 +1,6 @@
 import { pusherServer } from "@/app/lib/pusher";
 import Chat from "@/app/models/chat";
-import Message from "@/app/models/messageessage";
+import Message from "@/app/models/message";
 import User from "@/app/models/user";
 import { connectMongoDB } from "@/app/lib/mongodb";
 

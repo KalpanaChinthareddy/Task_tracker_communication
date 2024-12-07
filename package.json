@@ -12,6 +12,7 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^6.1.5",
+    "react-hook-form": "^7.45.0" ,
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",
