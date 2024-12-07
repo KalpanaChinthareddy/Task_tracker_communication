@@ -103,11 +103,18 @@ export default function TaskForm({ projectId }) {
   const [status, setStatus] = useState('');
   const [tasks,setTasks] = useState([]);
   const [users,setUsers] = useState([]);
+  const [userEmailMap, setUserEmailMap] = useState({});
   useEffect(() => {
     async function fetchData() {
       const userRes = await fetch(`/api/users`);
       const userData = await userRes.json();
       setUsers(userData);
+      const emailMap = {};
+      userData.forEach((user) => {
+        emailMap[user.username] = user.email;
+      });
+      setUserEmailMap(emailMap);
+    
     }
     fetchData();
   }, []);
@@ -132,6 +139,30 @@ export default function TaskForm({ projectId }) {
     const newTask = await res.json();
     setTasks([...tasks, newTask]);
     //console.log(session?.);
+
+    const response = await fetch("/api/notification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: userEmailMap[assignedTo],
+        subject: "Task Assigned to You",
+        content: `
+          <h1>New Task Assigned</h1>
+          <p>You have been assigned a new task.</p>
+        <p><strong>Task ID:</strong>${title}</p>
+          <p>Check your dashboard for more details.</p>
+        `,
+      }),
+    });
+
+    if (response.ok) {
+      console.log("Email notification sent successfully!");
+    } else {
+      const error = await response.json();
+      console.error("Failed to send email:", error.error);
+    }
     if(res.ok){
       const form = e.target;
       form.reset();
@@ -187,6 +218,19 @@ export default function TaskForm({ projectId }) {
         <option value="Done">Done</option>
       </select>
     </div>
+    <div>
+      <label className="block text-gray-700 font-semibold mb-1">Priority</label>
+      <select
+        value="Prority"
+        className="input border rounded px-3 py-2 w-full"
+      >
+        <option value="P0">P0</option>
+        <option value="P1">P1</option>
+        <option value="P2">P2</option>
+        <option value="P3">P3</option>
+      </select>
+    </div>
+    
 
     <div className="sm:col-span-2">
       <label className="block text-gray-700 font-semibold mb-1">Assign User</label>
